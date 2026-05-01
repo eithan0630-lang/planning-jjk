@@ -1,0 +1,988 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Planning — MJ & Animateurs</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&family=Noto+Serif+JP:wght@700&display=swap" rel="stylesheet">
+
+<!-- Firebase SDK -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, orderBy } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  // ══════════════════════════════════════════════════════
+  //  🔥 REMPLACE CES VALEURS PAR CELLES DE TON PROJET FIREBASE
+  // ══════════════════════════════════════════════════════
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyAXFHHYcuqN8gIhLUv1BpeK-tu32DYB1e0",
+  authDomain: "jjk-15c06.firebaseapp.com",
+  projectId: "jjk-15c06",
+  storageBucket: "jjk-15c06.firebasestorage.app",
+  messagingSenderId: "410191304707",
+  appId: "1:410191304707:web:542bc9ba5e7378962b5636",
+  measurementId: "G-MC0E3JSKPZ"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // ── Structure Firestore ──
+  // Collection: "planning"
+  // Document ID: "YYYY-MM-DD_HHMM_groupeId_userId"
+  // Fields: { date, heure, groupe, userId, userName, role, note, createdAt }
+
+  window._db = db;
+  window._fs = { collection, doc, setDoc, getDocs, deleteDoc, onSnapshot, query, orderBy };
+  window._firebaseReady = true;
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+
+<style>
+/* ═══════════════════════════════════════════
+   DESIGN SYSTEM — CURSED SCHEDULE
+═══════════════════════════════════════════ */
+:root {
+  --bg:#04050c; --bg1:#07080f; --bg2:#0b0d18; --bg3:#0f1220; --bg4:#141826; --bg5:#1a2030;
+  --border:rgba(255,255,255,0.04); --border2:rgba(255,255,255,0.08); --border3:rgba(255,255,255,0.15);
+  --gold:#c9a227; --gold2:#e8b84b; --gold3:#ffd97a; --gold-glow:rgba(201,162,39,0.15);
+  --purple:#7c5cbf; --purple2:#a78bfa; --purple3:#c4b5fd;
+  --blue:#3b82f6; --cyan:#06b6d4;
+  --text:#ddd8ee; --text2:#b8b2d0; --muted:#4a5168; --muted2:#7a809a;
+  --danger:#ef4444; --success:#22c55e; --warn:#f59e0b;
+  --g1:#ff6b6b; --g1b:rgba(255,107,107,0.15); --g1border:rgba(255,107,107,0.35);
+  --g2:#60a5fa; --g2b:rgba(96,165,250,0.15); --g2border:rgba(96,165,250,0.35);
+  --g3:#a78bfa; --g3b:rgba(167,139,250,0.15); --g3border:rgba(167,139,250,0.35);
+  --radius:12px; --radius-sm:7px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{min-height:100vh;background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:15px;line-height:1.5}
+::-webkit-scrollbar{width:4px;height:4px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(201,162,39,0.25);border-radius:2px}
+
+/* ═══ BG EFFECTS ═══ */
+.jjk-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.jjk-bg::before{content:'';position:absolute;inset:0;background:
+  radial-gradient(ellipse 60% 50% at 5% 0%,rgba(124,92,191,0.14) 0%,transparent 55%),
+  radial-gradient(ellipse 40% 35% at 95% 100%,rgba(201,162,39,0.08) 0%,transparent 50%);}
+.jjk-bg::after{content:'予';position:absolute;font-family:'Noto Serif JP',serif;font-size:45vw;font-weight:700;
+  color:rgba(255,255,255,0.012);bottom:-10vw;right:-5vw;line-height:1;animation:kanji-drift 35s ease-in-out infinite alternate;}
+@keyframes kanji-drift{from{transform:rotate(-2deg)}to{transform:rotate(2deg) scale(1.02)}}
+.jjk-grid{position:absolute;inset:0;background-image:
+  repeating-linear-gradient(0deg,transparent,transparent 59px,rgba(255,255,255,0.01) 60px),
+  repeating-linear-gradient(90deg,transparent,transparent 59px,rgba(255,255,255,0.01) 60px);}
+.orb{position:absolute;border-radius:50%;filter:blur(60px);animation:orb-float 14s ease-in-out infinite alternate}
+.orb1{width:350px;height:350px;background:rgba(124,92,191,0.06);top:-100px;left:-80px}
+.orb2{width:250px;height:250px;background:rgba(201,162,39,0.05);bottom:5%;right:3%;animation-duration:20s;animation-delay:-7s}
+@keyframes orb-float{from{transform:translate(0,0)}to{transform:translate(25px,35px)}}
+
+/* ═══ LAYOUT ═══ */
+.app{position:relative;z-index:1;max-width:1400px;margin:0 auto;padding:0 20px 40px}
+
+/* ═══ HEADER ═══ */
+.header{display:flex;align-items:center;justify-content:space-between;padding:24px 0 20px;border-bottom:1px solid var(--border2);margin-bottom:28px}
+.header-left{display:flex;align-items:center;gap:16px}
+.sigil{width:52px;height:52px;background:linear-gradient(135deg,rgba(201,162,39,0.2),rgba(124,92,191,0.2)),var(--bg1);
+  border:1px solid rgba(201,162,39,0.25);border-radius:12px;display:flex;align-items:center;justify-content:center;
+  font-family:'Noto Serif JP',serif;font-size:20px;color:var(--gold);text-shadow:0 0 20px rgba(201,162,39,0.8);
+  position:relative;}
+.sigil::before{content:'';position:absolute;inset:-1px;border-radius:13px;
+  background:linear-gradient(135deg,var(--gold),var(--purple),var(--gold));z-index:-1;animation:sigil-spin 8s linear infinite;opacity:0.6}
+@keyframes sigil-spin{from{filter:hue-rotate(0deg)}to{filter:hue-rotate(360deg)}}
+.header-title h1{font-family:'Cinzel',serif;font-size:22px;font-weight:700;color:var(--gold);letter-spacing:0.12em;text-shadow:0 0 30px rgba(201,162,39,0.3)}
+.header-title p{font-size:10px;color:var(--muted);letter-spacing:0.3em;text-transform:uppercase;margin-top:2px}
+.header-right{display:flex;align-items:center;gap:10px}
+.btn-add{display:flex;align-items:center;gap:7px;padding:9px 18px;background:linear-gradient(135deg,rgba(201,162,39,0.15),rgba(124,92,191,0.1));
+  border:1px solid rgba(201,162,39,0.35);border-radius:var(--radius-sm);color:var(--gold2);font-family:'Rajdhani',sans-serif;
+  font-size:13px;font-weight:600;letter-spacing:0.06em;cursor:pointer;transition:all .2s;text-transform:uppercase}
+.btn-add:hover{background:linear-gradient(135deg,rgba(201,162,39,0.25),rgba(124,92,191,0.18));border-color:rgba(201,162,39,0.6);box-shadow:0 0 20px rgba(201,162,39,0.15)}
+.db-status{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--muted2);letter-spacing:0.05em}
+.db-dot{width:7px;height:7px;border-radius:50%;background:var(--muted);transition:background .3s}
+.db-dot.ok{background:var(--success);box-shadow:0 0 8px rgba(34,197,94,0.6);animation:pulse-dot 2s ease-in-out infinite}
+.db-dot.err{background:var(--danger)}
+@keyframes pulse-dot{0%,100%{opacity:1}50%{opacity:0.5}}
+
+/* ═══ SEMAINE NAV ═══ */
+.week-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;gap:12px}
+.week-label{font-family:'Cinzel',serif;font-size:15px;font-weight:600;color:var(--text);letter-spacing:0.08em;text-align:center;flex:1}
+.week-label span{color:var(--gold);font-size:12px;display:block;font-weight:400;letter-spacing:0.15em;margin-top:2px;font-family:'Rajdhani',sans-serif}
+.btn-nav{width:36px;height:36px;border:1px solid var(--border2);border-radius:var(--radius-sm);background:var(--bg2);
+  color:var(--text2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s;flex-shrink:0}
+.btn-nav:hover{border-color:var(--border3);background:var(--bg3);color:var(--text)}
+.btn-today{padding:0 14px;width:auto;font-family:'Rajdhani',sans-serif;font-size:11px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--gold2);border-color:rgba(201,162,39,0.25)}
+.btn-today:hover{border-color:rgba(201,162,39,0.5);background:rgba(201,162,39,0.08)}
+
+/* ═══ GROUPES TABS ═══ */
+.groups-tabs{display:flex;gap:8px;margin-bottom:24px;flex-wrap:wrap}
+.gtab{display:flex;align-items:center;gap:8px;padding:8px 18px;border-radius:var(--radius-sm);border:1px solid;
+  font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  cursor:pointer;transition:all .2s;background:transparent}
+.gtab-all{border-color:var(--border2);color:var(--muted2)}
+.gtab-all.active,.gtab-all:hover{border-color:var(--border3);background:var(--bg3);color:var(--text)}
+.gtab-1{border-color:var(--g1border);color:var(--g1)}
+.gtab-1.active,.gtab-1:hover{background:var(--g1b)}
+.gtab-2{border-color:var(--g2border);color:var(--g2)}
+.gtab-2.active,.gtab-2:hover{background:var(--g2b)}
+.gtab-3{border-color:var(--g3border);color:var(--g3)}
+.gtab-3.active,.gtab-3:hover{background:var(--g3b)}
+.gtab-dot{width:8px;height:8px;border-radius:50%}
+.gtab-count{font-size:10px;opacity:0.7;font-weight:400}
+
+/* ═══ CALENDRIER ═══ */
+.calendar{display:grid;grid-template-columns:repeat(7,1fr);gap:1px;background:var(--border);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cal-header{background:var(--bg2);padding:10px 8px;text-align:center;font-family:'Cinzel',serif;font-size:11px;font-weight:600;
+  letter-spacing:0.1em;color:var(--muted2);text-transform:uppercase}
+.cal-header.weekend{color:var(--gold);opacity:0.7}
+.cal-day{background:var(--bg1);min-height:140px;padding:8px;display:flex;flex-direction:column;gap:4px;position:relative;cursor:pointer;transition:background .15s}
+.cal-day:hover{background:var(--bg2)}
+.cal-day.today{background:var(--bg3)}
+.cal-day.today::after{content:'';position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--gold),transparent)}
+.cal-day.other-month{opacity:0.35}
+.cal-day.weekend{background:rgba(201,162,39,0.015)}
+.cal-day-num{font-family:'Share Tech Mono',monospace;font-size:11px;color:var(--muted2);margin-bottom:3px;display:flex;align-items:center;justify-content:space-between}
+.cal-day-num .today-badge{font-size:9px;background:var(--gold);color:#000;padding:1px 5px;border-radius:3px;font-weight:700;letter-spacing:0.05em;font-family:'Rajdhani',sans-serif}
+.cal-day-add{opacity:0;font-size:16px;color:var(--muted);transition:opacity .15s;line-height:1}
+.cal-day:hover .cal-day-add{opacity:1}
+
+/* ═══ CRÉNEAU SLOT ═══ */
+.slot{border-radius:5px;padding:4px 6px;font-size:11px;font-weight:600;cursor:pointer;transition:all .15s;position:relative;overflow:hidden;line-height:1.3}
+.slot:hover{transform:translateY(-1px);filter:brightness(1.15)}
+.slot::before{content:'';position:absolute;inset:0;background:rgba(255,255,255,0.04)}
+.slot-g1{background:rgba(255,107,107,0.18);border-left:3px solid var(--g1);color:var(--g1)}
+.slot-g2{background:rgba(96,165,250,0.18);border-left:3px solid var(--g2);color:var(--g2)}
+.slot-g3{background:rgba(167,139,250,0.18);border-left:3px solid var(--g3);color:var(--g3)}
+.slot-time{font-family:'Share Tech Mono',monospace;font-size:9px;opacity:0.7;display:block}
+.slot-name{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;display:block}
+.slot-role{font-size:9px;opacity:0.6;font-weight:400;display:block}
+
+/* ═══ MODAL ═══ */
+.overlay{position:fixed;inset:0;background:rgba(4,5,12,0.85);z-index:100;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s}
+.overlay.open{opacity:1;pointer-events:all}
+.modal{background:linear-gradient(145deg,var(--bg2),var(--bg1));border:1px solid rgba(201,162,39,0.18);border-radius:20px;
+  padding:32px;width:500px;max-width:96vw;max-height:90vh;overflow-y:auto;position:relative;
+  box-shadow:0 0 60px rgba(124,92,191,0.12),0 40px 80px rgba(0,0,0,0.6);
+  transform:translateY(20px);transition:transform .3s cubic-bezier(0.22,1,0.36,1)}
+.overlay.open .modal{transform:translateY(0)}
+.modal::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:50%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(201,162,39,0.5),transparent)}
+.modal-title{font-family:'Cinzel',serif;font-size:17px;font-weight:700;color:var(--gold);letter-spacing:0.1em;margin-bottom:24px}
+.modal-close{position:absolute;top:16px;right:16px;width:32px;height:32px;border:1px solid var(--border2);border-radius:6px;
+  background:var(--bg3);color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:16px;transition:all .2s}
+.modal-close:hover{border-color:var(--border3);color:var(--text);background:var(--bg4)}
+
+/* ═══ FORM ═══ */
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.field{display:flex;flex-direction:column;gap:7px;margin-bottom:16px}
+.field label{font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted2)}
+.field input,.field select,.field textarea{
+  background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:10px 12px;
+  color:var(--text);font-family:'Rajdhani',sans-serif;font-size:14px;outline:none;transition:all .2s;width:100%}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:rgba(201,162,39,0.4);box-shadow:0 0 0 3px rgba(201,162,39,0.08)}
+.field select option{background:var(--bg3);color:var(--text)}
+.field textarea{resize:vertical;min-height:70px;line-height:1.5}
+
+/* Groupe pills */
+.groupe-pills{display:flex;gap:8px}
+.gpill{flex:1;padding:9px;border-radius:var(--radius-sm);border:1px solid;text-align:center;font-size:12px;font-weight:700;
+  letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;font-family:'Rajdhani',sans-serif}
+.gpill-1{border-color:var(--g1border);color:var(--g1)}
+.gpill-1.sel{background:var(--g1b);box-shadow:0 0 12px rgba(255,107,107,0.2)}
+.gpill-2{border-color:var(--g2border);color:var(--g2)}
+.gpill-2.sel{background:var(--g2b);box-shadow:0 0 12px rgba(96,165,250,0.2)}
+.gpill-3{border-color:var(--g3border);color:var(--g3)}
+.gpill-3.sel{background:var(--g3b);box-shadow:0 0 12px rgba(167,139,250,0.2)}
+
+/* Role pills */
+.role-pills{display:flex;gap:8px;flex-wrap:wrap}
+.rpill{padding:6px 12px;border-radius:var(--radius-sm);border:1px solid var(--border2);color:var(--muted2);
+  font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;cursor:pointer;transition:all .2s;font-family:'Rajdhani',sans-serif}
+.rpill.sel{border-color:rgba(201,162,39,0.4);background:rgba(201,162,39,0.1);color:var(--gold2)}
+.rpill:hover{border-color:var(--border3);color:var(--text)}
+
+/* Boutons modal */
+.modal-actions{display:flex;gap:10px;margin-top:24px}
+.btn-primary{flex:1;padding:12px;background:linear-gradient(135deg,rgba(201,162,39,0.2),rgba(124,92,191,0.15));
+  border:1px solid rgba(201,162,39,0.4);border-radius:var(--radius-sm);color:var(--gold2);font-family:'Cinzel',serif;
+  font-size:13px;font-weight:600;letter-spacing:0.08em;cursor:pointer;transition:all .2s}
+.btn-primary:hover{background:linear-gradient(135deg,rgba(201,162,39,0.3),rgba(124,92,191,0.22));box-shadow:0 0 20px rgba(201,162,39,0.15)}
+.btn-secondary{padding:12px 20px;background:transparent;border:1px solid var(--border2);border-radius:var(--radius-sm);
+  color:var(--muted2);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:0.06em;text-transform:uppercase}
+.btn-secondary:hover{border-color:var(--border3);color:var(--text)}
+.btn-danger{padding:12px 16px;background:rgba(239,68,68,0.1);border:1px solid rgba(239,68,68,0.3);border-radius:var(--radius-sm);
+  color:var(--danger);font-family:'Rajdhani',sans-serif;font-size:13px;font-weight:600;cursor:pointer;transition:all .2s;letter-spacing:0.06em;text-transform:uppercase}
+.btn-danger:hover{background:rgba(239,68,68,0.2)}
+
+/* ═══ LISTE VIEW ═══ */
+.list-view{display:flex;flex-direction:column;gap:8px}
+.list-item{display:grid;grid-template-columns:90px 1fr 120px 140px 80px;align-items:center;gap:14px;
+  padding:12px 16px;background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-sm);transition:all .15s;cursor:pointer}
+.list-item:hover{border-color:var(--border2);background:var(--bg2)}
+.list-item-time{font-family:'Share Tech Mono',monospace;font-size:12px;color:var(--muted2)}
+.list-item-name{font-size:14px;font-weight:600;color:var(--text)}
+.list-item-role{font-size:11px;color:var(--muted2);font-weight:400;margin-top:2px}
+.list-item-groupe{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:600}
+.list-item-note{font-size:11px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.list-item-actions{display:flex;gap:6px;justify-content:flex-end}
+.icon-btn{width:28px;height:28px;border:1px solid var(--border2);border-radius:5px;background:var(--bg3);
+  color:var(--muted2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:12px;transition:all .15s}
+.icon-btn:hover{border-color:var(--border3);color:var(--text)}
+.icon-btn.del:hover{border-color:rgba(239,68,68,0.4);background:rgba(239,68,68,0.1);color:var(--danger)}
+
+/* Groupe dot */
+.g-dot{width:10px;height:10px;border-radius:50%}
+
+/* ═══ VIEW TOGGLE ═══ */
+.view-toggle{display:flex;gap:1px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.vbtn{padding:7px 14px;font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;letter-spacing:0.06em;text-transform:uppercase;
+  cursor:pointer;color:var(--muted2);background:transparent;border:none;transition:all .2s}
+.vbtn.active{background:var(--bg4);color:var(--gold2)}
+.vbtn:hover:not(.active){color:var(--text)}
+
+/* ═══ STATS ═══ */
+.stats-bar{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:22px}
+.stat-card{background:var(--bg1);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px}
+.stat-val{font-family:'Share Tech Mono',monospace;font-size:22px;font-weight:700;color:var(--text);line-height:1}
+.stat-lbl{font-size:10px;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted2);margin-top:4px}
+.stat-card.g1 .stat-val{color:var(--g1)}
+.stat-card.g2 .stat-val{color:var(--g2)}
+.stat-card.g3 .stat-val{color:var(--g3)}
+
+/* ═══ EMPTY ═══ */
+.empty{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--muted);text-align:center}
+.empty-icon{font-family:'Noto Serif JP',serif;font-size:48px;margin-bottom:16px;opacity:0.3}
+.empty-text{font-size:13px;letter-spacing:0.1em;text-transform:uppercase}
+
+/* ═══ TOAST ═══ */
+.toast-container{position:fixed;top:20px;right:20px;z-index:999;display:flex;flex-direction:column;gap:8px}
+.toast{padding:12px 18px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);
+  font-size:13px;font-weight:600;letter-spacing:0.04em;animation:toast-in .3s ease both;box-shadow:0 8px 24px rgba(0,0,0,0.4)}
+.toast.ok{border-color:rgba(34,197,94,0.35);color:var(--success)}
+.toast.err{border-color:rgba(239,68,68,0.35);color:var(--danger)}
+.toast.info{border-color:rgba(201,162,39,0.35);color:var(--gold2)}
+@keyframes toast-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+
+/* ═══ TOOLBAR ═══ */
+.toolbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;gap:12px;flex-wrap:wrap}
+.toolbar-left{display:flex;align-items:center;gap:10px}
+
+/* ═══ CONFIG PANEL ═══ */
+.config-overlay{position:fixed;inset:0;background:rgba(4,5,12,0.85);z-index:200;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);opacity:0;pointer-events:none;transition:opacity .25s}
+.config-overlay.open{opacity:1;pointer-events:all}
+.config-modal{background:linear-gradient(145deg,var(--bg2),var(--bg1));border:1px solid rgba(124,92,191,0.25);border-radius:20px;
+  padding:32px;width:440px;max-width:96vw;max-height:85vh;overflow-y:auto;position:relative;
+  box-shadow:0 0 60px rgba(124,92,191,0.15),0 40px 80px rgba(0,0,0,0.6);
+  transform:translateY(20px);transition:transform .3s cubic-bezier(0.22,1,0.36,1)}
+.config-overlay.open .config-modal{transform:translateY(0)}
+.config-modal::before{content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);width:50%;height:1px;
+  background:linear-gradient(90deg,transparent,rgba(124,92,191,0.5),transparent)}
+.config-section{margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.config-section:last-child{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.config-section-title{font-family:'Cinzel',serif;font-size:12px;font-weight:600;color:var(--purple2);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:12px}
+.member-list{display:flex;flex-direction:column;gap:6px}
+.member-item{display:flex;align-items:center;gap:10px;padding:8px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.member-name{flex:1;font-size:13px;font-weight:600}
+.member-group-select{background:var(--bg4);border:1px solid var(--border2);border-radius:4px;padding:3px 6px;color:var(--text);font-size:12px;font-family:'Rajdhani',sans-serif}
+.btn-add-member{display:flex;align-items:center;gap:6px;padding:8px 14px;border:1px dashed var(--border2);border-radius:var(--radius-sm);
+  background:transparent;color:var(--muted2);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:all .2s;margin-top:8px;width:100%;justify-content:center}
+.btn-add-member:hover{border-color:rgba(124,92,191,0.4);color:var(--purple2);background:rgba(124,92,191,0.05)}
+.btn-config{display:flex;align-items:center;gap:7px;padding:9px 16px;border:1px solid var(--border2);border-radius:var(--radius-sm);
+  background:var(--bg2);color:var(--muted2);font-family:'Rajdhani',sans-serif;font-size:12px;font-weight:600;
+  letter-spacing:0.06em;text-transform:uppercase;cursor:pointer;transition:all .2s}
+.btn-config:hover{border-color:rgba(124,92,191,0.4);color:var(--purple2);background:rgba(124,92,191,0.06)}
+
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:900px){
+  .stats-bar{grid-template-columns:repeat(2,1fr)}
+  .list-item{grid-template-columns:70px 1fr 90px}
+}
+@media(max-width:700px){
+  .form-row{grid-template-columns:1fr}
+  .calendar{grid-template-columns:repeat(7,1fr)}
+  .cal-day{min-height:90px;padding:5px}
+  .slot-role,.slot-time{display:none}
+}
+</style>
+</head>
+<body>
+
+<div class="jjk-bg">
+  <div class="jjk-grid"></div>
+  <div class="orb orb1"></div>
+  <div class="orb orb2"></div>
+</div>
+
+<div id="toast-container" class="toast-container"></div>
+
+<div class="app">
+  <!-- HEADER -->
+  <div class="header">
+    <div class="header-left">
+      <div class="sigil">予</div>
+      <div class="header-title">
+        <h1>PLANNING</h1>
+        <p>MJ &amp; Animateurs — Gestion des Groupes</p>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="db-status">
+        <div class="db-dot" id="db-dot"></div>
+        <span id="db-label">Connexion...</span>
+      </div>
+      <button class="btn-config" onclick="openConfig()">⚙ Config</button>
+      <button class="btn-add" onclick="openModal()">＋ Ajouter un créneau</button>
+    </div>
+  </div>
+
+  <!-- STATS -->
+  <div class="stats-bar" id="stats-bar">
+    <div class="stat-card"><div class="stat-val" id="s-total">0</div><div class="stat-lbl">Total créneaux</div></div>
+    <div class="stat-card g1"><div class="stat-val" id="s-g1">0</div><div class="stat-lbl" id="lbl-g1">Groupe 1</div></div>
+    <div class="stat-card g2"><div class="stat-val" id="s-g2">0</div><div class="stat-lbl" id="lbl-g2">Groupe 2</div></div>
+    <div class="stat-card g3"><div class="stat-val" id="s-g3">0</div><div class="stat-lbl" id="lbl-g3">Groupe 3</div></div>
+  </div>
+
+  <!-- TOOLBAR -->
+  <div class="toolbar">
+    <div class="toolbar-left">
+      <!-- SEMAINE NAV -->
+      <div class="week-nav" style="gap:8px;margin:0">
+        <button class="btn-nav" onclick="changeWeek(-1)">‹</button>
+        <div class="week-label" style="min-width:180px">
+          <span id="week-range">Semaine</span>
+        </div>
+        <button class="btn-nav btn-today" onclick="goToday()">Aujourd'hui</button>
+        <button class="btn-nav" onclick="changeWeek(1)">›</button>
+      </div>
+    </div>
+    <div class="view-toggle">
+      <button class="vbtn active" id="vbtn-cal" onclick="setView('calendar')">📅 Calendrier</button>
+      <button class="vbtn" id="vbtn-list" onclick="setView('list')">☰ Liste</button>
+    </div>
+  </div>
+
+  <!-- GROUPE TABS -->
+  <div class="groups-tabs">
+    <button class="gtab gtab-all active" data-g="all" onclick="filterGroupe('all')">
+      ◈ Tous les groupes <span class="gtab-count" id="cnt-all"></span>
+    </button>
+    <button class="gtab gtab-1" data-g="1" onclick="filterGroupe('1')">
+      <span class="gtab-dot" style="background:var(--g1)"></span>
+      <span id="name-g1">Groupe 1</span> <span class="gtab-count" id="cnt-g1"></span>
+    </button>
+    <button class="gtab gtab-2" data-g="2" onclick="filterGroupe('2')">
+      <span class="gtab-dot" style="background:var(--g2)"></span>
+      <span id="name-g2">Groupe 2</span> <span class="gtab-count" id="cnt-g2"></span>
+    </button>
+    <button class="gtab gtab-3" data-g="3" onclick="filterGroupe('3')">
+      <span class="gtab-dot" style="background:var(--g3)"></span>
+      <span id="name-g3">Groupe 3</span> <span class="gtab-count" id="cnt-g3"></span>
+    </button>
+  </div>
+
+  <!-- CONTENU PRINCIPAL -->
+  <div id="content"></div>
+</div>
+
+<!-- ══════════════════════════════════
+     MODAL AJOUTER/EDITER CRÉNEAU
+══════════════════════════════════ -->
+<div class="overlay" id="overlay" onclick="closeModalOutside(event)">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-title" id="modal-title">＋ Nouveau créneau</div>
+
+    <div class="field">
+      <label>Groupe</label>
+      <div class="groupe-pills">
+        <div class="gpill gpill-1" onclick="selGroupe(1)" id="gp1">Groupe 1</div>
+        <div class="gpill gpill-2" onclick="selGroupe(2)" id="gp2">Groupe 2</div>
+        <div class="gpill gpill-3" onclick="selGroupe(3)" id="gp3">Groupe 3</div>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="f-date">
+      </div>
+      <div class="field">
+        <label>Heure</label>
+        <input type="time" id="f-heure" value="20:00">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Membre</label>
+      <select id="f-user">
+        <option value="">— Sélectionner —</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>Rôle</label>
+      <div class="role-pills" id="role-pills">
+        <div class="rpill" onclick="selRole('MJ')" data-r="MJ">MJ</div>
+        <div class="rpill" onclick="selRole('Animateur')" data-r="Animateur">Animateur</div>
+        <div class="rpill" onclick="selRole('Co-MJ')" data-r="Co-MJ">Co-MJ</div>
+        <div class="rpill" onclick="selRole('Remplaçant')" data-r="Remplaçant">Remplaçant</div>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Note <span style="opacity:.5;font-weight:400">(optionnel)</span></label>
+      <textarea id="f-note" placeholder="Informations supplémentaires..."></textarea>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeModal()">Annuler</button>
+      <button class="btn-danger" id="btn-del" style="display:none" onclick="deleteSlot()">Supprimer</button>
+      <button class="btn-primary" onclick="saveSlot()">Enregistrer</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     MODAL CONFIG
+══════════════════════════════════ -->
+<div class="config-overlay" id="config-overlay" onclick="closeConfigOutside(event)">
+  <div class="config-modal">
+    <button class="modal-close" onclick="closeConfig()">✕</button>
+    <div class="modal-title" style="color:var(--purple2)">⚙ Configuration</div>
+
+    <!-- Noms des groupes -->
+    <div class="config-section">
+      <div class="config-section-title">Noms des groupes</div>
+      <div class="form-row">
+        <div class="field" style="margin:0">
+          <label style="color:var(--g1)">Groupe 1</label>
+          <input type="text" id="cfg-n1" placeholder="ex: Alpha">
+        </div>
+        <div class="field" style="margin:0">
+          <label style="color:var(--g2)">Groupe 2</label>
+          <input type="text" id="cfg-n2" placeholder="ex: Bêta">
+        </div>
+      </div>
+      <div class="form-row" style="margin-top:10px">
+        <div class="field" style="margin:0">
+          <label style="color:var(--g3)">Groupe 3</label>
+          <input type="text" id="cfg-n3" placeholder="ex: Gamma">
+        </div>
+        <div></div>
+      </div>
+    </div>
+
+    <!-- Membres -->
+    <div class="config-section">
+      <div class="config-section-title">Membres</div>
+      <div class="member-list" id="member-list"></div>
+      <div style="display:flex;gap:8px;margin-top:8px">
+        <input type="text" id="new-member-name" placeholder="Nom du membre..." style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none">
+        <select id="new-member-group" style="background:var(--bg3);border:1px solid var(--border2);border-radius:var(--radius-sm);padding:8px 10px;color:var(--text);font-family:'Rajdhani',sans-serif;font-size:13px;outline:none">
+          <option value="1">Groupe 1</option>
+          <option value="2">Groupe 2</option>
+          <option value="3">Groupe 3</option>
+        </select>
+        <button class="btn-add-member" style="width:auto;margin:0;padding:8px 14px" onclick="addMember()">＋</button>
+      </div>
+    </div>
+
+    <!-- Firebase config -->
+    <div class="config-section">
+      <div class="config-section-title">🔥 Firebase</div>
+      <div class="field" style="margin:0">
+        <label>Project ID</label>
+        <input type="text" id="cfg-project" placeholder="Déjà configuré dans le code source">
+      </div>
+      <p style="font-size:11px;color:var(--muted2);margin-top:8px;letter-spacing:0.03em;line-height:1.6">
+        Pour changer la base Firebase, modifie la variable <code style="font-family:'Share Tech Mono';color:var(--gold2)">firebaseConfig</code> dans le code source HTML.
+      </p>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn-secondary" onclick="closeConfig()">Annuler</button>
+      <button class="btn-primary" onclick="saveConfig()">Sauvegarder</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+// ═══════════════════════════════════════════════════════
+//  ÉTAT GLOBAL
+// ═══════════════════════════════════════════════════════
+let slots = [];          // données depuis Firebase
+let currentWeek = startOfWeek(new Date());
+let activeGroupe = 'all';
+let currentView = 'calendar';
+let editId = null;
+let selGroupe_ = null;
+let selRole_ = null;
+let unsubscribe = null;
+
+let config = JSON.parse(localStorage.getItem('planning-config') || '{}');
+config.groupNames = config.groupNames || { 1:'Groupe 1', 2:'Groupe 2', 3:'Groupe 3' };
+config.members = config.members || [
+  {id:'m1', name:'MJ Alpha', groupe:1},
+  {id:'m2', name:'MJ Bêta', groupe:2},
+  {id:'m3', name:'Animateur Gamma', groupe:3}
+];
+
+// ═══════════════════════════════════════════════════════
+//  UTILS DATE
+// ═══════════════════════════════════════════════════════
+function startOfWeek(d) {
+  const day = new Date(d);
+  const diff = (day.getDay() + 6) % 7; // Lundi = 0
+  day.setDate(day.getDate() - diff);
+  day.setHours(0,0,0,0);
+  return day;
+}
+
+function addDays(d, n) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function fmt(d) {
+  return d.toISOString().split('T')[0];
+}
+
+function fmtDisplay(d) {
+  return d.toLocaleDateString('fr-FR', {day:'2-digit', month:'short'});
+}
+
+function fmtFull(d) {
+  return d.toLocaleDateString('fr-FR', {weekday:'short', day:'2-digit', month:'long'});
+}
+
+function isToday(d) {
+  return fmt(d) === fmt(new Date());
+}
+
+// ═══════════════════════════════════════════════════════
+//  FIREBASE LISTENER
+// ═══════════════════════════════════════════════════════
+function initFirebase() {
+  const db = window._db;
+  const { collection, onSnapshot, query, orderBy } = window._fs;
+
+  const q = query(collection(db, 'planning'), orderBy('date'), orderBy('heure'));
+  unsubscribe = onSnapshot(q, snap => {
+    slots = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    setDbStatus(true);
+    render();
+  }, err => {
+    console.error('Firebase error:', err);
+    setDbStatus(false);
+    toast('Erreur Firebase : ' + err.message, 'err');
+  });
+}
+
+function setDbStatus(ok) {
+  const dot = document.getElementById('db-dot');
+  const lbl = document.getElementById('db-label');
+  dot.className = 'db-dot ' + (ok ? 'ok' : 'err');
+  lbl.textContent = ok ? 'Firebase connecté' : 'Erreur Firebase';
+}
+
+// ═══════════════════════════════════════════════════════
+//  RENDER
+// ═══════════════════════════════════════════════════════
+function render() {
+  applyGroupNames();
+  updateStats();
+  updateCounts();
+  if (currentView === 'calendar') renderCalendar();
+  else renderList();
+}
+
+function applyGroupNames() {
+  const g = config.groupNames;
+  document.getElementById('name-g1').textContent = g[1];
+  document.getElementById('name-g2').textContent = g[2];
+  document.getElementById('name-g3').textContent = g[3];
+  document.getElementById('lbl-g1').textContent = g[1];
+  document.getElementById('lbl-g2').textContent = g[2];
+  document.getElementById('lbl-g3').textContent = g[3];
+  document.getElementById('gp1').textContent = g[1];
+  document.getElementById('gp2').textContent = g[2];
+  document.getElementById('gp3').textContent = g[3];
+}
+
+function filteredSlots() {
+  if (activeGroupe === 'all') return slots;
+  return slots.filter(s => String(s.groupe) === String(activeGroupe));
+}
+
+function weekSlots() {
+  const start = fmt(currentWeek);
+  const end = fmt(addDays(currentWeek, 6));
+  return filteredSlots().filter(s => s.date >= start && s.date <= end);
+}
+
+function updateStats() {
+  const all = slots;
+  document.getElementById('s-total').textContent = all.length;
+  document.getElementById('s-g1').textContent = all.filter(s => String(s.groupe)==='1').length;
+  document.getElementById('s-g2').textContent = all.filter(s => String(s.groupe)==='2').length;
+  document.getElementById('s-g3').textContent = all.filter(s => String(s.groupe)==='3').length;
+}
+
+function updateCounts() {
+  const fs = filteredSlots();
+  document.getElementById('cnt-all').textContent = '(' + slots.length + ')';
+  document.getElementById('cnt-g1').textContent = '(' + slots.filter(s=>String(s.groupe)==='1').length + ')';
+  document.getElementById('cnt-g2').textContent = '(' + slots.filter(s=>String(s.groupe)==='2').length + ')';
+  document.getElementById('cnt-g3').textContent = '(' + slots.filter(s=>String(s.groupe)==='3').length + ')';
+}
+
+// ═══════════════════════════════════════════════════════
+//  VUE CALENDRIER
+// ═══════════════════════════════════════════════════════
+function renderCalendar() {
+  // Semaine range label
+  const start = currentWeek;
+  const end = addDays(currentWeek, 6);
+  const y = start.getFullYear();
+  const wNum = getWeekNumber(start);
+  document.querySelector('.week-label').innerHTML =
+    `${fmtDisplay(start)} — ${fmtDisplay(end)} <span>Semaine ${wNum} · ${y}</span>`;
+
+  const ws = weekSlots();
+  const byDate = {};
+  ws.forEach(s => {
+    if (!byDate[s.date]) byDate[s.date] = [];
+    byDate[s.date].push(s);
+  });
+
+  const days = ['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+  let html = '';
+  days.forEach((d,i) => {
+    const weekend = i >= 5;
+    html += `<div class="cal-header${weekend?' weekend':''}">${d}</div>`;
+  });
+
+  for (let i = 0; i < 7; i++) {
+    const day = addDays(currentWeek, i);
+    const key = fmt(day);
+    const todayClass = isToday(day) ? ' today' : '';
+    const wkClass = i >= 5 ? ' weekend' : '';
+    const daySlots = (byDate[key] || []).sort((a,b) => a.heure > b.heure ? 1 : -1);
+
+    html += `<div class="cal-day${todayClass}${wkClass}" onclick="calDayClick('${key}')">
+      <div class="cal-day-num">
+        <span>${day.getDate()}</span>
+        ${isToday(day) ? '<span class="today-badge">AUJOURD\'HUI</span>' : ''}
+        <span class="cal-day-add">＋</span>
+      </div>`;
+
+    daySlots.forEach(s => {
+      const gc = 'slot-g' + s.groupe;
+      html += `<div class="slot ${gc}" onclick="editSlotClick(event,'${s.id}')">
+        <span class="slot-time">${s.heure}</span>
+        <span class="slot-name">${s.userName||'?'}</span>
+        <span class="slot-role">${s.role||''}</span>
+      </div>`;
+    });
+
+    html += `</div>`;
+  }
+
+  document.getElementById('content').innerHTML = `<div class="calendar">${html}</div>`;
+}
+
+// ═══════════════════════════════════════════════════════
+//  VUE LISTE
+// ═══════════════════════════════════════════════════════
+function renderList() {
+  const start = currentWeek;
+  const end = addDays(currentWeek, 6);
+  const wNum = getWeekNumber(start);
+  document.querySelector('.week-label').innerHTML =
+    `${fmtDisplay(start)} — ${fmtDisplay(end)} <span>Semaine ${wNum} · ${start.getFullYear()}</span>`;
+
+  const ws = weekSlots().sort((a,b) => (a.date+a.heure) > (b.date+b.heure) ? 1 : -1);
+
+  if (ws.length === 0) {
+    document.getElementById('content').innerHTML = `<div class="empty">
+      <div class="empty-icon">予</div>
+      <div class="empty-text">Aucun créneau cette semaine</div>
+    </div>`;
+    return;
+  }
+
+  let lastDate = '';
+  let html = '<div class="list-view">';
+  ws.forEach(s => {
+    const d = new Date(s.date + 'T12:00:00');
+    const dStr = fmtFull(d);
+    if (dStr !== lastDate) {
+      html += `<div style="font-family:'Cinzel',serif;font-size:11px;font-weight:600;letter-spacing:0.12em;text-transform:uppercase;color:var(--muted2);padding:10px 0 4px;border-bottom:1px solid var(--border);margin-bottom:6px">${dStr}</div>`;
+      lastDate = dStr;
+    }
+    const gColor = ['','var(--g1)','var(--g2)','var(--g3)'][s.groupe] || 'var(--muted)';
+    const gName = config.groupNames[s.groupe] || 'Groupe ' + s.groupe;
+    html += `<div class="list-item" onclick="editSlotId('${s.id}')">
+      <div class="list-item-time">${s.heure}</div>
+      <div>
+        <div class="list-item-name">${s.userName||'?'}</div>
+        <div class="list-item-role">${s.role||''} ${s.note ? '— '+s.note : ''}</div>
+      </div>
+      <div class="list-item-groupe">
+        <span class="g-dot" style="background:${gColor}"></span>
+        <span style="color:${gColor}">${gName}</span>
+      </div>
+      <div class="list-item-note">${s.note||''}</div>
+      <div class="list-item-actions" onclick="event.stopPropagation()">
+        <div class="icon-btn" onclick="editSlotId('${s.id}')">✎</div>
+        <div class="icon-btn del" onclick="deleteSlotId('${s.id}')">✕</div>
+      </div>
+    </div>`;
+  });
+  html += '</div>';
+  document.getElementById('content').innerHTML = html;
+}
+
+// ═══════════════════════════════════════════════════════
+//  ACTIONS
+// ═══════════════════════════════════════════════════════
+window.changeWeek = (n) => { currentWeek = addDays(currentWeek, n * 7); render(); };
+window.goToday = () => { currentWeek = startOfWeek(new Date()); render(); };
+window.setView = (v) => {
+  currentView = v;
+  document.getElementById('vbtn-cal').classList.toggle('active', v==='calendar');
+  document.getElementById('vbtn-list').classList.toggle('active', v==='list');
+  render();
+};
+window.filterGroupe = (g) => {
+  activeGroupe = g;
+  document.querySelectorAll('.gtab').forEach(el => el.classList.toggle('active', el.dataset.g === g));
+  render();
+};
+
+window.calDayClick = (date) => openModal(date);
+window.editSlotClick = (e, id) => { e.stopPropagation(); editSlotId(id); };
+window.editSlotId = (id) => {
+  const s = slots.find(x => x.id === id);
+  if (!s) return;
+  openModal(s.date, s);
+};
+window.deleteSlotId = async (id) => {
+  if (!confirm('Supprimer ce créneau ?')) return;
+  await _deleteSlot(id);
+};
+window.deleteSlot = async () => {
+  if (!editId) return;
+  if (!confirm('Supprimer ce créneau ?')) return;
+  await _deleteSlot(editId);
+  closeModal();
+};
+
+async function _deleteSlot(id) {
+  try {
+    const { doc, deleteDoc } = window._fs;
+    await deleteDoc(doc(window._db, 'planning', id));
+    toast('Créneau supprimé.', 'ok');
+  } catch(e) { toast('Erreur : ' + e.message, 'err'); }
+}
+
+// ═══════════════════════════════════════════════════════
+//  MODAL
+// ═══════════════════════════════════════════════════════
+window.openModal = (date, slot) => {
+  editId = slot ? slot.id : null;
+  selGroupe_ = slot ? slot.groupe : null;
+  selRole_ = slot ? slot.role : null;
+
+  document.getElementById('modal-title').textContent = slot ? '✎ Modifier le créneau' : '＋ Nouveau créneau';
+  document.getElementById('btn-del').style.display = slot ? 'block' : 'none';
+
+  // Pré-remplir date
+  const today = fmt(new Date());
+  document.getElementById('f-date').value = date || today;
+  document.getElementById('f-heure').value = slot ? slot.heure : '20:00';
+  document.getElementById('f-note').value = slot ? (slot.note||'') : '';
+
+  // User select
+  populateUserSelect(slot ? slot.userId : null);
+
+  // Groupe pills
+  [1,2,3].forEach(g => {
+    document.getElementById('gp'+g).classList.toggle('sel', slot ? String(slot.groupe)===String(g) : false);
+  });
+
+  // Role pills
+  document.querySelectorAll('.rpill').forEach(el => {
+    el.classList.toggle('sel', slot ? el.dataset.r === slot.role : false);
+  });
+
+  document.getElementById('overlay').classList.add('open');
+};
+
+window.closeModal = () => {
+  document.getElementById('overlay').classList.remove('open');
+  editId = null; selGroupe_ = null; selRole_ = null;
+};
+
+window.closeModalOutside = (e) => {
+  if (e.target.id === 'overlay') closeModal();
+};
+
+window.selGroupe = (g) => {
+  selGroupe_ = g;
+  [1,2,3].forEach(i => document.getElementById('gp'+i).classList.toggle('sel', i===g));
+  populateUserSelect(null, g);
+};
+
+window.selRole = (r) => {
+  selRole_ = r;
+  document.querySelectorAll('.rpill').forEach(el => el.classList.toggle('sel', el.dataset.r===r));
+};
+
+function populateUserSelect(selectedUserId, groupeFilter) {
+  const sel = document.getElementById('f-user');
+  const g = groupeFilter || selGroupe_;
+  const members = g
+    ? config.members.filter(m => String(m.groupe) === String(g))
+    : config.members;
+  sel.innerHTML = '<option value="">— Sélectionner —</option>';
+  members.forEach(m => {
+    const opt = document.createElement('option');
+    opt.value = m.id;
+    opt.textContent = m.name + ' (' + (config.groupNames[m.groupe]||'G'+m.groupe) + ')';
+    if (m.id === selectedUserId) opt.selected = true;
+    sel.appendChild(opt);
+  });
+}
+
+window.saveSlot = async () => {
+  const date = document.getElementById('f-date').value;
+  const heure = document.getElementById('f-heure').value;
+  const userId = document.getElementById('f-user').value;
+  const note = document.getElementById('f-note').value.trim();
+
+  if (!date || !heure) return toast('Date et heure obligatoires.', 'err');
+  if (!selGroupe_) return toast('Sélectionne un groupe.', 'err');
+  if (!userId) return toast('Sélectionne un membre.', 'err');
+  if (!selRole_) return toast('Sélectionne un rôle.', 'err');
+
+  const member = config.members.find(m => m.id === userId);
+  const id = editId || `${date}_${heure.replace(':','')}_g${selGroupe_}_${userId}_${Date.now()}`;
+
+  const data = {
+    date, heure,
+    groupe: selGroupe_,
+    userId,
+    userName: member ? member.name : userId,
+    role: selRole_,
+    note,
+    updatedAt: new Date().toISOString()
+  };
+  if (!editId) data.createdAt = new Date().toISOString();
+
+  try {
+    const { doc, setDoc } = window._fs;
+    await setDoc(doc(window._db, 'planning', id), data, { merge: true });
+    toast(editId ? 'Créneau mis à jour !' : 'Créneau ajouté !', 'ok');
+    closeModal();
+  } catch(e) { toast('Erreur : ' + e.message, 'err'); }
+};
+
+// ═══════════════════════════════════════════════════════
+//  CONFIG
+// ═══════════════════════════════════════════════════════
+window.openConfig = () => {
+  document.getElementById('cfg-n1').value = config.groupNames[1];
+  document.getElementById('cfg-n2').value = config.groupNames[2];
+  document.getElementById('cfg-n3').value = config.groupNames[3];
+  renderMemberList();
+  document.getElementById('config-overlay').classList.add('open');
+};
+window.closeConfig = () => document.getElementById('config-overlay').classList.remove('open');
+window.closeConfigOutside = (e) => { if (e.target.id==='config-overlay') closeConfig(); };
+
+function renderMemberList() {
+  const el = document.getElementById('member-list');
+  el.innerHTML = config.members.map((m,i) => `
+    <div class="member-item">
+      <span class="member-name">${m.name}</span>
+      <select class="member-group-select" onchange="changeMemberGroup(${i},this.value)">
+        ${[1,2,3].map(g=>`<option value="${g}"${String(m.groupe)===String(g)?' selected':''}>${config.groupNames[g]||'G'+g}</option>`).join('')}
+      </select>
+      <div class="icon-btn del" onclick="removeMember(${i})">✕</div>
+    </div>`).join('');
+}
+
+window.changeMemberGroup = (i, g) => { config.members[i].groupe = parseInt(g); renderMemberList(); };
+window.removeMember = (i) => { config.members.splice(i,1); renderMemberList(); };
+window.addMember = () => {
+  const name = document.getElementById('new-member-name').value.trim();
+  const groupe = parseInt(document.getElementById('new-member-group').value);
+  if (!name) return;
+  config.members.push({ id: 'm' + Date.now(), name, groupe });
+  document.getElementById('new-member-name').value = '';
+  renderMemberList();
+};
+
+window.saveConfig = () => {
+  config.groupNames[1] = document.getElementById('cfg-n1').value || 'Groupe 1';
+  config.groupNames[2] = document.getElementById('cfg-n2').value || 'Groupe 2';
+  config.groupNames[3] = document.getElementById('cfg-n3').value || 'Groupe 3';
+  localStorage.setItem('planning-config', JSON.stringify(config));
+  toast('Configuration sauvegardée !', 'ok');
+  closeConfig();
+  render();
+};
+
+// ═══════════════════════════════════════════════════════
+//  TOAST
+// ═══════════════════════════════════════════════════════
+window.toast = (msg, type='info') => {
+  const el = document.createElement('div');
+  el.className = `toast ${type}`;
+  el.textContent = msg;
+  document.getElementById('toast-container').appendChild(el);
+  setTimeout(() => el.remove(), 3500);
+};
+
+// ═══════════════════════════════════════════════════════
+//  UTILITAIRES
+// ═══════════════════════════════════════════════════════
+function getWeekNumber(d) {
+  const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay()||7));
+  const yearStart = new Date(Date.UTC(date.getUTCFullYear(),0,1));
+  return Math.ceil((((date - yearStart) / 86400000) + 1) / 7);
+}
+
+// ═══════════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════════
+function init() {
+  render(); // rendu initial (vide)
+  if (window._firebaseReady) {
+    initFirebase();
+  } else {
+    window.addEventListener('firebase-ready', initFirebase);
+  }
+}
+
+init();
+</script>
+</body>
+</html>
